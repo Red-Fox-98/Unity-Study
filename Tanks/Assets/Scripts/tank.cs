@@ -1,17 +1,21 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class tank : MonoBehaviour
+public class Tank : MonoBehaviour
 {
+    public Vector3 motionState;
+    public Vector3 oldMotionVector;
+    public StateOfAnimations animationState;
     public float speed = 3f;
 
     private Rigidbody2D rigidBody;
-    private Animator animation;
+    private new Animator animation;
     public SpriteRenderer sprite;
-    public int w = 0;
-    public int s = 0;
 
     private void Awake()
     {
@@ -20,67 +24,61 @@ public class tank : MonoBehaviour
         sprite = GetComponentInChildren<SpriteRenderer>();
     }
 
-    private States State
+
+    private StateOfAnimations AnimationState
     {
-        get { return (States)animation.GetInteger("state"); }
+        get { return (StateOfAnimations)animation.GetInteger("state"); }
         set { animation.SetInteger("state", (int)value); }
+    }
+
+    private void FixedUpdate()
+    {
+        CheckMoving();
     }
 
     void Update()
     {
-        if (Input.GetButton("Vertical"))
+        if (Input.GetKey(KeyCode.UpArrow))
         {
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
-            {
-                RunUp();
-            }
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
-            {
-                RunDown();
-            }
+            motionState = Vector3.up;
+            animationState = StateOfAnimations.up;
         }
-        if (Input.GetButton("Horizontal"))
+        if (Input.GetKey(KeyCode.DownArrow))
         {
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
-            {
-                RunLeft(); 
-            }
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
-            {
-                RunRight();
-            }
+            motionState = Vector3.down;
+            animationState = StateOfAnimations.down;
+        }
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            motionState = Vector3.left;
+            animationState = StateOfAnimations.left;
+        }
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            motionState = Vector3.right;
+            animationState = StateOfAnimations.right;
+        }
+        Move(motionState, animationState);
+        oldMotionVector = transform.position;
+    }
+
+    private void Move(Vector3 motionState, StateOfAnimations animationState)
+    {
+        AnimationState = animationState;
+        Vector3 vector = motionState * 0.5f;
+        transform.position = Vector3.MoveTowards(transform.position, transform.position + vector, speed * Time.deltaTime);
+    }
+
+    private void CheckMoving()
+    {
+        if (oldMotionVector == transform.position)
+        {
+            motionState = Vector3.zero;
+            Move(motionState, animationState);
         }
     }
 
-    private void RunUp()
-    {
-        State = States.up;
-        Vector3 vector = transform.up * 0.5f;
-        transform.position = Vector3.MoveTowards(transform.position, transform.position + vector, speed * Time.deltaTime);
-    }
-
-    private void RunDown()
-    {
-        State = States.down;
-        Vector3 vector = transform.up * (-0.5f);
-        transform.position = Vector3.MoveTowards(transform.position, transform.position + vector, speed * Time.deltaTime);
-    }
-
-    private void RunLeft()
-    {
-        State = States.left;
-        Vector3 vector = transform.right * (-0.5f);
-        transform.position = Vector3.MoveTowards(transform.position, transform.position + vector, speed * Time.deltaTime);
-    }
-
-    private void RunRight()
-    {
-        State = States.right;
-        Vector3 vector = transform.right * 0.5f;
-        transform.position = Vector3.MoveTowards(transform.position, transform.position + vector, speed * Time.deltaTime);
-    }
-
-    public enum States
+    public enum StateOfAnimations
     {
         up,
         down,
